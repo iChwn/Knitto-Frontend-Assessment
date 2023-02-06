@@ -1,4 +1,5 @@
-import { Button, Card, CardItem, SearchBar } from "@/components";
+/* eslint-disable react-hooks/exhaustive-deps */
+import { Button, Card, CardItem, InputBar } from "@/components";
 import { FormEvent, useEffect, useState } from "react";
 import _ from "lodash";
 import { useAddTodoMutation, useTodoApiList } from "@/services/todo/todoApi";
@@ -12,11 +13,8 @@ type TodoList = {
 }
 
 function Home({data} : {data: TodoList[]}) {
-  const [movie, setTodo] = useState<TodoList[]>(data)
+  const [todos, setTodo] = useState<TodoList[]>(data)
   const [searchValue, setSearchValue] = useState("")
-  const [isLoading, setLoading] = useState(false)
-  const [isLoadingDetail, setLoadingDetail] = useState(false)
-  const [isTodoEmpty, setTodoEmpty] = useState(false)
   const [startPage, setStartPage] = useState(0);
   const [limitPage, setLimitPage] = useState(10);
   const { loading: loadingList, data: todoList, error: errorList } = useTodoApiList(startPage, limitPage);
@@ -37,52 +35,64 @@ function Home({data} : {data: TodoList[]}) {
       title: searchValue,
       completed: false
     })
-    console.log("submit")
+    setSearchValue("")
     e.preventDefault()
   }
 
+  useEffect(() => {
+    if(responseData) {
+      const cloneData = _.cloneDeep(todos)
+      cloneData.unshift(responseData)
+      setTodo(cloneData)
+    }
+  }, [responseData])
+
   const renderStatus = () => {
-    if(isLoading) {
+    if(isUpdatingProgram) {
       return "Loading..."
-    } else if((!isTodoEmpty && !isLoading && movie.length === 0)) {
+    } else if((todos.length === 0)) {
       return "Your todo list will appear here"
     }
   }
 
   const handleCheck = (result:TodoList) => {
-    console.log("Checked", result)
+    const cloneData = _.cloneDeep(todos)
+    let newTodos = cloneData.filter(todo => todo.id === result.id)[0]
+    newTodos.completed = !newTodos.completed
+    setTodo(cloneData)
   }
 
-  const handlePagination = () => {
-
-  }
-
-  const checkRedux = () => {
-    // dispatch(increaseCounter())
+  const handleDelete = (result:TodoList) => {
+    const cloneData = _.cloneDeep(todos)
+    const index = cloneData.findIndex(data => data.id === result.id)
+    if (index !== -1) {
+        cloneData.splice(index, 1)
+    }
+    setTodo(cloneData)
   }
 
   return (
     <div className="w-full h-full overflow-auto">
-      <button onClick={checkRedux}>wkwkwkkwk</button>
-      <SearchBar onSubmit={onSubmit} value={searchValue} onChange={e => setSearchValue(e.target.value)} placeholder="Add TODO Items" />
-      {!isLoading && (
+      <InputBar onSubmit={onSubmit} value={searchValue} onChange={e => setSearchValue(e.target.value)} placeholder="Add TODO Items" />
+      {(!isUpdatingProgram && todos.length !== 0) && (
         <div className="flex justify-center items-center max-w-[600px] p-[30px] flex-col m-auto gap-5">
           <div className="grid grid-cols-1 gap-5 w-full">
-            {movie.map((result, index) => {
+            {todos.map((result, index) => {
               return (
                 <Card key={index}> 
                   <CardItem 
                     title={result.title}
+                    isComplete={result.completed}
                     handleCheck={() => handleCheck(result)}
-                    handleDelete={() => console.log("Wewewe")}
+                    handleDelete={() => handleDelete(result)}
                   />
                 </Card>
               )
             })}
           </div>
           <div className="w-full flex flex-1 mt-5 justify-between">
-            <Button title="Prev" onClick={() => setStartPage(startPage - 1)}/>
-            <Button title="Next" onClick={() => setStartPage(startPage + 1)}/>
+            <Button isDisabled={loadingList || startPage === 0} title="Prev" onClick={() => setStartPage(startPage - 1)}/>
+            <Button isDisabled={loadingList} title="Next" onClick={() => setStartPage(startPage + 1)}/>
           </div>
         </div>
       )}
@@ -97,7 +107,7 @@ function Home({data} : {data: TodoList[]}) {
 
 
 export const getServerSideProps: GetServerSideProps = async () => {
-  const res = await fetch(`https://jsonplaceholder.typicode.com/todos?_start=0&_limit=5`)
+  const res = await fetch(`https://jsonplaceholder.typicode.com/todos?_start=0&_limit=10`)
   const data = await res.json()
   
   return {

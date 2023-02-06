@@ -3,7 +3,7 @@
 import Button from "./atoms/button";
 import Card from "./atoms/card";
 import Image from "./atoms/image";
-import SearchBar from "./atoms/search";
+import InputBar from "./atoms/search";
 
 //Molecules
 import CardItem from "./molecules/card/cardItem";
@@ -15,6 +15,6 @@ export {
   Card,
   Image,
   Button,
-  SearchBar,
+  InputBar,
   CardItem
 };

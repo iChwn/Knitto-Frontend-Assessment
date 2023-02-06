@@ -6,4 +6,4 @@ type State = {
   todo: Todo;
 }
 
-export const sampleSelector = (state:State) => state.todo.count;
+export const sampleSelector = (state:State) => state;
